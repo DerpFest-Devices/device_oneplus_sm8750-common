@@ -238,6 +238,11 @@ vendor/etc/ssg/ta_config.json
 vendor/etc/ssg/tz_whitelist.json
 vendor/lib64/libtaautoload.so
 
+# ConsumerIR
+my_product/del-app/ConsumerIRApp/ConsumerIRApp.apk:product/app/ConsumerIRApp/ConsumerIRApp.apk;PRESIGNED
+my_stock/etc/asl/com.oplus.consumerIRApp-safetyLabel.xml:product/etc/asl/com.oplus.consumerIRApp-safetyLabel.xml
+
+
 # Data
 vendor/bin/adpl
 vendor/bin/embmsslServer
