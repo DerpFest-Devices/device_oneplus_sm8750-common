@@ -503,14 +503,14 @@ DEVICE_FRAMEWORK_COMPATIBILITY_MATRIX_FILE += \
 DEVICE_MATRIX_FILE := hardware/qcom-caf/common/compatibility_matrix_aidl.xml
 DEVICE_MANIFEST_FILE := \
     $(AUDIO_HAL_DIR)/configs/sun/manifest_audio_qti_services.xml \
-    $(LOCAL_PATH)/manifest_sun.xml
+    $(LOCAL_PATH)/vintf/manifest_sun.xml
 
 ifneq ($(TARGET_IS_TABLET),true)
 DEVICE_MANIFEST_FILE += \
-    $(LOCAL_PATH)/network_manifest.xml
+    $(LOCAL_PATH)/vintf/network_manifest.xml
 
 ODM_MANIFEST_FILES := \
-    $(LOCAL_PATH)/network_manifest_odm.xml
+    $(LOCAL_PATH)/vintf/network_manifest_odm.xml
 endif
 
 # Virtualization service
