@@ -719,8 +719,6 @@ vendor/lib64/libosensenativeproxy_client.so;MODULE_SUFFIX=_vendor
 odm/bin/hw/vendor.oplus.hardware.stability.oplus_project-V1-service
 odm/etc/init/vendor.oplus.hardware.stability.oplus_project-V1-service.rc
 odm/etc/vintf/manifest/manifest_oplus_stability_project_aidl.xml
-odm/lib64/vendor.oplus.hardware.stability.oplus_project-V2-ndk.so
-vendor/lib64/vendor.oplus.hardware.stability.oplus_project-V1-ndk.so
 
 # OPLUS URCC
 odm/etc/uah/uahconfig.pb
