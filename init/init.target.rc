@@ -105,7 +105,6 @@ on post-fs-data
     write /sys/kernel/cnss/fs_ready 1
 
 on early-boot
-    setprop ro.surface_flinger.supports_background_blur ${vendor.display.supports_background_blur}
     verity_update_state
 
 on boot
