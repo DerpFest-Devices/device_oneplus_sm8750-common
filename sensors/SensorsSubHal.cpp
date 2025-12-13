@@ -26,7 +26,7 @@ constexpr auto kTypeUnderScreenRgbSensor = 33171070;
 
 // This is larger than any sensor handle returned by the HAL
 constexpr auto kWrappedSensorHandleBase = 0x10000;
-inline int32_t IsWrappedHandle(int32_t sensor_handle) {
+inline bool IsWrappedHandle(int32_t sensor_handle) {
     return sensor_handle >= kWrappedSensorHandleBase;
 }
 inline int32_t FromWrappedHandle(int32_t sensor_handle) {
