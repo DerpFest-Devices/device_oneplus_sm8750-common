@@ -1,5 +1,5 @@
 ## All proprietary files from this list, unless pinned and noted otherwise,
-## are from OnePlus 13 (CPH2653_16.0.1.304(EX01)).
+## are from OnePlus 13 (CPH2653_16.0.2.402(EX01)).
 
 # Current blobs with ELF checks disabled:
 # libar-pal depends on libagmclient and libar-gsl, which are gnu makefile targets
@@ -193,7 +193,7 @@ vendor/lib64/libcwb_qcom_aidl.so
 vendor/lib64/libhdrvivid.so
 vendor/lib64/libhwcsensor.so
 vendor/lib64/libsdm-brightnessaware-parser.so
-vendor/lib64/vendor.oplus.hardware.cwb-V1-ndk.so
+vendor/lib64/vendor.oplus.hardware.cwb-V2-ndk.so
 vendor/lib64/vendor.oplus.hardware.cwb@1.0.so
 
 # Display (HDR)
