@@ -279,7 +279,6 @@ void AlsCorrection::process(Event& event, bool is_wise_rgb) {
                     break;
                 }
             }
-            sensor_corrected = std::max(sensor_corrected - 14.0, 0.0);
             event.u.scalar = sensor_corrected;
             state.last_corrected_value = sensor_corrected;
             ALOGV("Fully corrected sensor value: %.0f lux", sensor_corrected);
