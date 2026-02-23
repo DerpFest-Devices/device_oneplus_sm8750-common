@@ -100,6 +100,9 @@ void AlsCorrection::init() {
 
     conf.hbr = GetBoolProperty("vendor.sensors.als_correction.hbr", false);
     conf.bias = GetIntProperty("vendor.sensors.als_correction.bias", 0);
+    is = std::istringstream(GetProperty("vendor.sensors.als_correction.rgbw_max_lux", ""));
+    is >> conf.rgbw_max_lux[0] >> conf.rgbw_max_lux[1]
+        >> conf.rgbw_max_lux[2] >> conf.rgbw_max_lux[3];
     is = std::istringstream(GetProperty("vendor.sensors.als_correction.rgbw_max_lux_div", ""));
     is >> conf.rgbw_max_lux_div[0] >> conf.rgbw_max_lux_div[1]
         >> conf.rgbw_max_lux_div[2] >> conf.rgbw_max_lux_div[3];
