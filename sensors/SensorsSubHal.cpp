@@ -5,6 +5,8 @@
 
 #include "SensorsSubHal.h"
 
+#include "AlsCorrection.h"
+
 #include <android-base/logging.h>
 #include <dlfcn.h>
 #include <hardware/sensors.h>
@@ -89,17 +91,29 @@ Return<void> SensorsSubHal::configDirectReport(int32_t sensor_handle, int32_t ch
 
 Return<void> SensorsSubHal::getSensorsList_2_1(ISensors::getSensorsList_2_1_cb _hidl_cb) {
     return impl_->getSensorsList_2_1([&](const auto& _hidl_out_list) {
-        auto it = std::find_if(_hidl_out_list.begin(), _hidl_out_list.end(), [](auto&& v) {
+        const bool has_light_sensor = std::any_of(_hidl_out_list.begin(), _hidl_out_list.end(), [](const SensorInfo &s) {
+            return s.type == SensorType::LIGHT;
+        });
+        auto high_pwm_it = std::find_if(_hidl_out_list.begin(), _hidl_out_list.end(), [](auto&& v) {
             return static_cast<int32_t>(v.type) == kTypeUnderScreenRgbSensor;
         });
-        if (it != _hidl_out_list.end()) {
+
+        if (has_light_sensor || high_pwm_it != _hidl_out_list.end()) {
+            AlsCorrection::init();
+        }
+
+        if (high_pwm_it != _hidl_out_list.end()) {
+            if (has_light_sensor) {
+                LOG(ERROR) << "A light sensor already exists while trying to create another one.";
+            }
+
             auto last = _hidl_out_list.size();
             auto sensors = hidl_vec<SensorInfo>(last + 1);
             std::copy(_hidl_out_list.begin(), _hidl_out_list.end(), sensors.begin());
 
-            handle_type_[it->sensorHandle] = it->type;
+            handle_type_[high_pwm_it->sensorHandle] = high_pwm_it->type;
 
-            sensors[last] = *it;
+            sensors[last] = *high_pwm_it;
             sensors[last].sensorHandle = ToWrappedHandle(sensors[last].sensorHandle);
             sensors[last].name = "Aliased Light Sensor";
             sensors[last].type = SensorType::LIGHT;
@@ -151,21 +165,19 @@ Return<void> SensorsSubHal::onDynamicSensorsConnected_2_1(
 }
 
 void SensorsSubHal::postEvents(const std::vector<Event>& events, ScopedWakelock wakelock) {
-    std::vector<Event> wrapped_events;
-    for (auto&& e : events) {
+    std::vector<Event> processed_events(events);
+    for (auto &e : processed_events) {
         if (static_cast<int32_t>(e.sensorType) == kTypeUnderScreenRgbSensor) {
-            auto event_copy = e;
-            event_copy.sensorHandle = ToWrappedHandle(e.sensorHandle);
-            event_copy.sensorType = SensorType::LIGHT;
-            wrapped_events.emplace_back(std::move(event_copy));
+            e.sensorHandle = ToWrappedHandle(e.sensorHandle);
+            AlsCorrection::process(e, false); // REVISIT
+        }
+
+        if (e.sensorType == SensorType::LIGHT) {
+            AlsCorrection::process(e, false);
         }
     }
-    if (wrapped_events.empty()) {
-        hal_proxy_callback_->postEvents(events, std::move(wakelock));
-    } else {
-        wrapped_events.insert(wrapped_events.end(), events.begin(), events.end());
-        hal_proxy_callback_->postEvents(wrapped_events, std::move(wakelock));
-    }
+
+    hal_proxy_callback_->postEvents(processed_events, std::move(wakelock));
 }
 
 ScopedWakelock SensorsSubHal::createScopedWakelock(bool lock) {

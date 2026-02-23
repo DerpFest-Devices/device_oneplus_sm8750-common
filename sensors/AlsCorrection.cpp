@@ -28,7 +28,9 @@ namespace android {
 namespace hardware {
 namespace sensors {
 namespace V2_1 {
+namespace subhal {
 namespace implementation {
+namespace qsh_wrapper {
 
 static const std::string rgbw_max_lux_paths[4] = {
     ALS_CALI_DIR "red_max_lux",
@@ -168,7 +170,7 @@ void AlsCorrection::init() {
     }
 }
 
-void AlsCorrection::process(Event& event) {
+void AlsCorrection::process(Event& event, bool is_wise_rgb) {
     static AreaRgbCaptureResult screenshot = { 0.0, 0.0, 0.0 };
 
     ALOGV("Raw sensor reading: %.0f", event.u.scalar);
@@ -241,12 +243,13 @@ void AlsCorrection::process(Event& event) {
         float sensor_raw_corrected = std::max(event.u.scalar - cumulative_correction, 0.0f);
 
         float agc_gain = conf.sensor_inverse_gain[0];
+        const float event_data2 = is_wise_rgb ? event.u.data[2] : event.u.scalar;
         if (sensor_raw_corrected > conf.agc_threshold) {
             float gain_estimate = 0;
             if (conf.hbr) {
-                gain_estimate = event.u.data[2] * 1000.0 / sensor_raw_corrected;
+                gain_estimate = event_data2 * 1000.0 / sensor_raw_corrected;
             } else {
-                gain_estimate = sensor_raw_corrected / event.u.data[2];
+                gain_estimate = sensor_raw_corrected / event_data2;
             }
             for (int i = 0; i < 4; i++) {
                 if (gain_estimate > conf.sensor_gaincal_points[i]) {
@@ -284,7 +287,9 @@ void AlsCorrection::process(Event& event) {
     }
 }
 
+}  // namespace qsh_wrapper
 }  // namespace implementation
+}  // namespace subhal
 }  // namespace V2_1
 }  // namespace sensors
 }  // namespace hardware

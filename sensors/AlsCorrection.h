@@ -13,17 +13,19 @@ namespace android {
 namespace hardware {
 namespace sensors {
 namespace V2_1 {
+namespace subhal {
 namespace implementation {
-
-static constexpr int SENSOR_TYPE_QTI_WISE_LIGHT = 33171103;
+namespace qsh_wrapper {
 
 class AlsCorrection {
   public:
     static void init();
-    static void process(Event& event);
+    static void process(Event& event, bool is_wise_rgb);
 };
 
+}  // namespace qsh_wrapper
 }  // namespace implementation
+}  // namespace subhal
 }  // namespace V2_1
 }  // namespace sensors
 }  // namespace hardware
