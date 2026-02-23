@@ -177,6 +177,7 @@ void AlsCorrection::process(Event& event, bool is_wise_rgb) {
     static AreaRgbCaptureResult screenshot = { 0.0, 0.0, 0.0 };
 
     ALOGV("Raw sensor reading: %.0f", event.u.scalar);
+    ALOGV("hyst min: %f, max: %f", state.hyst_min, state.hyst_max);
 
     if (event.u.scalar > conf.bias) {
         event.u.scalar -= conf.bias;
@@ -239,6 +240,9 @@ void AlsCorrection::process(Event& event, bool is_wise_rgb) {
         cumulative_correction *= brightness / conf.max_brightness;
         float brightness_fullwhite = conf.rgbw_max_lux[3] * brightness / conf.max_brightness;
         float brightness_grayscale_gamma = std::pow(rgbw[3] / 255.0, 2.2) * brightness_fullwhite;
+        ALOGV("screen: %.0f / %.0f, cumulative_correction: %f, fullwhite: %f, grayscale_gamma: %f",
+            brightness, conf.max_brightness, cumulative_correction, brightness_fullwhite,
+            brightness_grayscale_gamma);
         cumulative_correction = std::min(cumulative_correction, brightness_fullwhite);
         cumulative_correction = std::max(cumulative_correction, brightness_grayscale_gamma);
         ALOGV("Estimated screen brightness: %.0f", cumulative_correction);
@@ -261,6 +265,7 @@ void AlsCorrection::process(Event& event, bool is_wise_rgb) {
             }
         }
         ALOGV("AGC gain: %f", agc_gain);
+        ALOGV("sensor_raw_corrected: %f", sensor_raw_corrected);
 
         if (cumulative_correction <= event.u.scalar * 1.35
                 || event.u.scalar * conf.calib_gain * agc_gain < 10000.0
