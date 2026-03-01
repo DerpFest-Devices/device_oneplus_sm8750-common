@@ -45,7 +45,6 @@ struct als_config {
     float rgbw_max_lux[4];
     float rgbw_max_lux_div[4];
     float rgbw_lux_postmul[4];
-    float rgbw_poly[4][4];
     float grayscale_weights[3];
     float sensor_gaincal_points[4];
     float sensor_inverse_gain[4];
@@ -107,18 +106,6 @@ void AlsCorrection::init() {
     is = std::istringstream(GetProperty("vendor.sensors.als_correction.rgbw_max_lux_div", ""));
     is >> conf.rgbw_max_lux_div[0] >> conf.rgbw_max_lux_div[1]
         >> conf.rgbw_max_lux_div[2] >> conf.rgbw_max_lux_div[3];
-    is = std::istringstream(GetProperty("vendor.sensors.als_correction.rgbw_poly1", ""));
-    is >> conf.rgbw_poly[0][0] >> conf.rgbw_poly[0][1]
-        >> conf.rgbw_poly[0][2] >> conf.rgbw_poly[0][3];
-    is = std::istringstream(GetProperty("vendor.sensors.als_correction.rgbw_poly2", ""));
-    is >> conf.rgbw_poly[1][0] >> conf.rgbw_poly[1][1]
-        >> conf.rgbw_poly[1][2] >> conf.rgbw_poly[1][3];
-    is = std::istringstream(GetProperty("vendor.sensors.als_correction.rgbw_poly3", ""));
-    is >> conf.rgbw_poly[2][0] >> conf.rgbw_poly[2][1]
-        >> conf.rgbw_poly[2][2] >> conf.rgbw_poly[2][3];
-    is = std::istringstream(GetProperty("vendor.sensors.als_correction.rgbw_poly4", ""));
-    is >> conf.rgbw_poly[3][0] >> conf.rgbw_poly[3][1]
-        >> conf.rgbw_poly[3][2] >> conf.rgbw_poly[3][3];
     is = std::istringstream(GetProperty("vendor.sensors.als_correction.grayscale_weights", ""));
     is >> conf.grayscale_weights[0] >> conf.grayscale_weights[1] >> conf.grayscale_weights[2];
     is = std::istringstream(GetProperty("vendor.sensors.als_correction.sensor_gaincal_points", ""));
@@ -224,31 +211,17 @@ void AlsCorrection::process(Event& event, bool is_wise_rgb) {
                 + screenshot.g * conf.grayscale_weights[1]
                 + screenshot.b * conf.grayscale_weights[2]
         };
-        float cumulative_correction = 0.0;
-        for (int i = 0; i < 4; i++) {
-            float corr = 0.0;
-            for (float coef : conf.rgbw_poly[i]) {
-                corr *= rgbw[i];
-                corr += coef;
-            }
-            corr *= conf.rgbw_lux_postmul[i];
-            if (i < 3) {
-                cumulative_correction += std::max(corr, 0.0f);
-            } else {
-                cumulative_correction -= corr;
-            }
-        }
-        cumulative_correction *= brightness / conf.max_brightness;
-        float brightness_fullwhite = conf.rgbw_max_lux[3] * brightness / conf.max_brightness;
-        float brightness_grayscale_gamma = std::pow(rgbw[3] / 255.0, 2.2) * brightness_fullwhite;
-        ALOGV("screen: %.0f / %.0f, cumulative_correction: %f, fullwhite: %f, grayscale_gamma: %f",
-            brightness, conf.max_brightness, cumulative_correction, brightness_fullwhite,
-            brightness_grayscale_gamma);
-        cumulative_correction = std::min(cumulative_correction, brightness_fullwhite);
-        cumulative_correction = std::max(cumulative_correction, brightness_grayscale_gamma);
-        ALOGV("Estimated screen brightness: %.0f", cumulative_correction);
 
-        float sensor_raw_corrected = std::max(event.u.scalar - cumulative_correction, 0.0f);
+        const float brightness_fullwhite = conf.rgbw_max_lux[3] * brightness / conf.max_brightness;
+        const float brightness_grayscale_gamma = std::pow(rgbw[3] / 255.0, 2.2) * brightness_fullwhite;
+        ALOGV("screen: %.0f / %.0f, fullwhite: %f, grayscale_gamma: %f",
+            brightness, conf.max_brightness, brightness_fullwhite,
+            brightness_grayscale_gamma);
+
+        float est_screen_brightness = brightness_grayscale_gamma;
+        ALOGV("Estimated screen brightness: %.0f", est_screen_brightness);
+
+        float sensor_raw_corrected = std::max(event.u.scalar - est_screen_brightness, 0.0f);
 
         float agc_gain = conf.sensor_inverse_gain[0];
         const float event_data2 = is_wise_rgb ? event.u.data[2] : event.u.scalar;
@@ -268,7 +241,7 @@ void AlsCorrection::process(Event& event, bool is_wise_rgb) {
         ALOGV("AGC gain: %f", agc_gain);
         ALOGV("sensor_raw_corrected: %f", sensor_raw_corrected);
 
-        if (cumulative_correction <= event.u.scalar * 1.35
+        if (est_screen_brightness <= event.u.scalar * 1.35
                 || event.u.scalar * conf.calib_gain * agc_gain < 10000.0
                 || state.force_update) {
             float sensor_corrected = sensor_raw_corrected * conf.calib_gain * agc_gain;
