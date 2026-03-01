@@ -20,7 +20,7 @@ namespace qsh_wrapper {
 class AlsCorrection {
   public:
     static void init();
-    static void process(Event& event, bool is_wise_rgb);
+    static void process(Event& event);
 };
 
 }  // namespace qsh_wrapper

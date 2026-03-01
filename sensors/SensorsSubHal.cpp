@@ -169,11 +169,11 @@ void SensorsSubHal::postEvents(const std::vector<Event>& events, ScopedWakelock 
     for (auto &e : processed_events) {
         if (static_cast<int32_t>(e.sensorType) == kTypeUnderScreenRgbSensor) {
             e.sensorHandle = ToWrappedHandle(e.sensorHandle);
-            AlsCorrection::process(e, false); // REVISIT
+            AlsCorrection::process(e); // REVISIT
         }
 
         if (e.sensorType == SensorType::LIGHT) {
-            AlsCorrection::process(e, false);
+            AlsCorrection::process(e);
         }
     }
 

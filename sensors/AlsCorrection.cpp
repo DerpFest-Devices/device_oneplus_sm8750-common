@@ -41,14 +41,11 @@ static const std::string rgbw_max_lux_paths[4] = {
 };
 
 struct als_config {
-    bool hbr;
     float rgbw_max_lux[4];
     float rgbw_max_lux_div[4];
     float rgbw_lux_postmul[4];
     float grayscale_weights[3];
-    float sensor_gaincal_points[4];
     float sensor_inverse_gain[4];
-    float agc_threshold;
     float calib_gain;
     float bias;
     float max_brightness;
@@ -75,12 +72,10 @@ static struct {
     bool force_update;
     float hyst_min, hyst_max;
     float last_corrected_value;
-    float last_agc_gain;
 } state = {
     .last_update = 0,
     .force_update = true,
     .hyst_min = -1.0, .hyst_max = -1.0,
-    .last_agc_gain = 0.0,
 };
 
 static als_config conf;
@@ -98,7 +93,6 @@ static T get(const std::string& path, const T& def) {
 void AlsCorrection::init() {
     std::istringstream is;
 
-    conf.hbr = GetBoolProperty("vendor.sensors.als_correction.hbr", false);
     conf.bias = GetIntProperty("vendor.sensors.als_correction.bias", 0);
     is = std::istringstream(GetProperty("vendor.sensors.als_correction.rgbw_max_lux", ""));
     is >> conf.rgbw_max_lux[0] >> conf.rgbw_max_lux[1]
@@ -108,9 +102,6 @@ void AlsCorrection::init() {
         >> conf.rgbw_max_lux_div[2] >> conf.rgbw_max_lux_div[3];
     is = std::istringstream(GetProperty("vendor.sensors.als_correction.grayscale_weights", ""));
     is >> conf.grayscale_weights[0] >> conf.grayscale_weights[1] >> conf.grayscale_weights[2];
-    is = std::istringstream(GetProperty("vendor.sensors.als_correction.sensor_gaincal_points", ""));
-    is >> conf.sensor_gaincal_points[0] >> conf.sensor_gaincal_points[1]
-        >> conf.sensor_gaincal_points[2] >> conf.sensor_gaincal_points[3];
     is = std::istringstream(GetProperty("vendor.sensors.als_correction.sensor_inverse_gain", ""));
     is >> conf.sensor_inverse_gain[0] >> conf.sensor_inverse_gain[1]
         >> conf.sensor_inverse_gain[2] >> conf.sensor_inverse_gain[3];
@@ -137,7 +128,6 @@ void AlsCorrection::init() {
     if (row_coe != 0.0) {
         conf.sensor_inverse_gain[0] = row_coe / 1000.0;
     }
-    conf.agc_threshold = 800.0 / conf.sensor_inverse_gain[0];
 
     float cali_coe = get(ALS_CALI_DIR "cali_coe", 0.0);
     conf.calib_gain = cali_coe > 0.0 ? cali_coe / 1000.0 : 1.0;
@@ -161,7 +151,7 @@ void AlsCorrection::init() {
     }
 }
 
-void AlsCorrection::process(Event& event, bool is_wise_rgb) {
+void AlsCorrection::process(Event& event) {
     static AreaRgbCaptureResult screenshot = { 0.0, 0.0, 0.0 };
 
     ALOGV("Raw sensor reading: %.0f", event.u.scalar);
@@ -192,7 +182,7 @@ void AlsCorrection::process(Event& event, bool is_wise_rgb) {
         state.last_update = now;
     }
 
-    float sensor_raw_calibrated = event.u.scalar * conf.calib_gain * state.last_agc_gain;
+    float sensor_raw_calibrated = event.u.scalar * conf.calib_gain;
     if (state.force_update
             || ((event.u.scalar < state.hyst_min || event.u.scalar > state.hyst_max)
                 && (sensor_raw_calibrated < 10.0 || sensor_raw_calibrated > (5.0 / .07)))) {
@@ -223,29 +213,12 @@ void AlsCorrection::process(Event& event, bool is_wise_rgb) {
 
         float sensor_raw_corrected = std::max(event.u.scalar - est_screen_brightness, 0.0f);
 
-        float agc_gain = conf.sensor_inverse_gain[0];
-        const float event_data2 = is_wise_rgb ? event.u.data[2] : event.u.scalar;
-        if (sensor_raw_corrected > conf.agc_threshold) {
-            float gain_estimate = 0;
-            if (conf.hbr) {
-                gain_estimate = event_data2 * 1000.0 / sensor_raw_corrected;
-            } else {
-                gain_estimate = sensor_raw_corrected / event_data2;
-            }
-            for (int i = 0; i < 4; i++) {
-                if (gain_estimate > conf.sensor_gaincal_points[i]) {
-                    agc_gain = conf.sensor_inverse_gain[i];
-                }
-            }
-        }
-        ALOGV("AGC gain: %f", agc_gain);
         ALOGV("sensor_raw_corrected: %f", sensor_raw_corrected);
 
         if (est_screen_brightness <= event.u.scalar * 1.35
-                || event.u.scalar * conf.calib_gain * agc_gain < 10000.0
+                || event.u.scalar * conf.calib_gain < 10000.0
                 || state.force_update) {
-            float sensor_corrected = sensor_raw_corrected * conf.calib_gain * agc_gain;
-            state.last_agc_gain = agc_gain;
+            float sensor_corrected = sensor_raw_corrected * conf.calib_gain;
             for (auto& range : hysteresis_ranges) {
                 if (sensor_corrected <= range.middle) {
                     state.hyst_min = range.min;
