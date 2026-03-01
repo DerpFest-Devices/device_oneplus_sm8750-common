@@ -222,7 +222,7 @@ void AlsCorrection::process(Event& event) {
             for (auto& range : hysteresis_ranges) {
                 if (sensor_corrected <= range.middle) {
                     state.hyst_min = range.min;
-                    state.hyst_max = range.max + brightness_fullwhite;
+                    state.hyst_max = range.max + est_screen_brightness;
                     break;
                 }
             }
