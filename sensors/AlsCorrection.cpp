@@ -198,10 +198,8 @@ void AlsCorrection::process(Event& event) {
         state.last_update = now;
     }
 
-    float sensor_raw_calibrated = event.u.scalar * conf.calib_gain;
     if (state.force_update ||
-        ((event.u.scalar < state.hyst_min || event.u.scalar > state.hyst_max) &&
-         (sensor_raw_calibrated < 10.0 || sensor_raw_calibrated > (5.0 / .07)))) {
+        ((event.u.scalar < state.hyst_min || event.u.scalar > state.hyst_max))) {
         if (service == nullptr || !service->getAreaBrightness(&screenshot).isOk()) {
             ALOGE("Could not get area above sensor");
             // TODO figure out a better way to drop events
@@ -243,8 +241,9 @@ void AlsCorrection::process(Event& event) {
 
         ALOGV("sensor_raw_corrected: %f", sensor_raw_corrected);
 
-        if (screen_lux <= event.u.scalar * 1.35 || event.u.scalar * conf.calib_gain < 10000.0 ||
-            state.force_update) {
+        const float sensor_raw_calibrated = event.u.scalar * conf.calib_gain;
+        if (state.force_update || sensor_raw_calibrated < 10000.0 ||
+            screen_lux <= event.u.scalar * 1.35) {
             const float sensor_corrected = sensor_raw_corrected * conf.calib_gain;
             for (const auto& range : hysteresis_ranges) {
                 if (sensor_corrected <= range.middle) {
