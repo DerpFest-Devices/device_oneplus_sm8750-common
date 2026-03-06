@@ -78,9 +78,9 @@ ndk::ScopedAStatus AreaCapture::getAreaBrightness(AreaRgbCaptureResult* _aidl_re
     uint8_t* out;
     captureResults.buffer->lock(GraphicBuffer::USAGE_SW_READ_OFTEN, reinterpret_cast<void**>(&out));
 
-    auto resultWidth = captureResults.buffer->getWidth();
-    auto resultHeight = captureResults.buffer->getHeight();
-    auto stride = captureResults.buffer->getStride();
+    const auto resultWidth = captureResults.buffer->getWidth();
+    const auto resultHeight = captureResults.buffer->getHeight();
+    const auto stride = captureResults.buffer->getStride();
 
     // we can sum this directly on linear light
     uint32_t rsum = 0, gsum = 0, bsum = 0;
@@ -92,12 +92,12 @@ ndk::ScopedAStatus AreaCapture::getAreaBrightness(AreaRgbCaptureResult* _aidl_re
         }
     }
 
-    float max = resultWidth * resultHeight;
+    captureResults.buffer->unlock();
+
+    const float max = resultWidth * resultHeight;
     _aidl_return->r = rsum / max;
     _aidl_return->g = gsum / max;
     _aidl_return->b = bsum / max;
-
-    captureResults.buffer->unlock();
 
     return ndk::ScopedAStatus::ok();
 }
