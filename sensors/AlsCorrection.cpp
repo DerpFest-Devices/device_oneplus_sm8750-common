@@ -42,8 +42,6 @@ static const std::string rgbw_max_lux_paths[4] = {
 
 struct als_config {
     float rgbw_max_lux[4];
-    float rgbw_max_lux_div[4];
-    float rgbw_lux_postmul[4];
     float grayscale_weights[3];
     float sensor_inverse_gain[4];
     float calib_gain;
@@ -97,27 +95,16 @@ void AlsCorrection::init() {
     is = std::istringstream(GetProperty("vendor.sensors.als_correction.rgbw_max_lux", ""));
     is >> conf.rgbw_max_lux[0] >> conf.rgbw_max_lux[1]
         >> conf.rgbw_max_lux[2] >> conf.rgbw_max_lux[3];
-    is = std::istringstream(GetProperty("vendor.sensors.als_correction.rgbw_max_lux_div", ""));
-    is >> conf.rgbw_max_lux_div[0] >> conf.rgbw_max_lux_div[1]
-        >> conf.rgbw_max_lux_div[2] >> conf.rgbw_max_lux_div[3];
     is = std::istringstream(GetProperty("vendor.sensors.als_correction.grayscale_weights", ""));
     is >> conf.grayscale_weights[0] >> conf.grayscale_weights[1] >> conf.grayscale_weights[2];
     is = std::istringstream(GetProperty("vendor.sensors.als_correction.sensor_inverse_gain", ""));
     is >> conf.sensor_inverse_gain[0] >> conf.sensor_inverse_gain[1]
         >> conf.sensor_inverse_gain[2] >> conf.sensor_inverse_gain[3];
 
-    float rgbw_acc = 0.0;
     for (int i = 0; i < 4; i++) {
         float max_lux = get(rgbw_max_lux_paths[i], 0.0);
         if (max_lux != 0.0) {
             conf.rgbw_max_lux[i] = max_lux;
-        }
-        if (i < 3) {
-            rgbw_acc += conf.rgbw_max_lux[i];
-            conf.rgbw_lux_postmul[i] = conf.rgbw_max_lux[i] / conf.rgbw_max_lux_div[i];
-        } else {
-            rgbw_acc -= conf.rgbw_max_lux[i];
-            conf.rgbw_lux_postmul[i] = rgbw_acc / conf.rgbw_max_lux_div[i];
         }
     }
     ALOGI("Display maximums: R=%.0f G=%.0f B=%.0f W=%.0f",
