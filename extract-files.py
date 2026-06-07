@@ -82,6 +82,24 @@ blob_fixups: blob_fixups_user_type = {
         .regex_replace(r'\n.*OPLUS_FEATURE_DSIPLAY[\s\S]*?OPLUS_FEATURE_DSIPLAY.*\n', ''),
     'vendor/etc/media_codecs_sun.xml': blob_fixup()
         .regex_replace('.*media_codecs_(google_audio|google_c2|google_telephony|google_video|vendor_audio).*\n', ''),
+    # APS turbo fix: on the port, the camera app's classloader namespace cannot dlopen the /odm
+    # ArcSoft/QNN helper libs (couple-HDR, turbo, QNN HTP), which gates the DSP/QNN path so turbo
+    # can't run. Exposing them as vendor public libraries lets the app namespace resolve them.
+    'vendor/etc/public.libraries.txt': blob_fixup()
+        .add_line_if_missing('libarcsoft_hdr_couple_api.so')
+        .add_line_if_missing('libarcsoft_high_dynamic_range_couple.so')
+        .add_line_if_missing('libarcsoft_smart_denoise.so')
+        .add_line_if_missing('libarcsoft_turbo_hdr_raw.so')
+        .add_line_if_missing('libarcsoft_turbo_raw.so')
+        .add_line_if_missing('libarcsoft_qnnhtp.so')
+        .add_line_if_missing('libQnnHtp.so')
+        .add_line_if_missing('libQnnSystem.so')
+        .add_line_if_missing('libQnnHtpV79Stub.so')
+        .add_line_if_missing('libQnnGpu.so')
+        .add_line_if_missing('libQnnHtpStub.so')
+        # libapsfixup.so is a /odm lib that libAlgoProcess now DT_NEEDEDs; the camera namespace
+        # can't resolve /odm libs by name, so expose it as a public library too.
+        .add_line_if_missing('libapsfixup.so'),
     'vendor/etc/seccomp_policy/gnss@2.0-qsap-location.policy': blob_fixup()
         .add_line_if_missing('sched_get_priority_min: 1')
         .add_line_if_missing('sched_get_priority_max: 1'),
