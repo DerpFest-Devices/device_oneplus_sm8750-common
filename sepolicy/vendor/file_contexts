@@ -1,0 +1,2 @@
+# APS Fixup
+/odm/lib64/libapsfixup\.so    u:object_r:same_process_hal_file:s0
