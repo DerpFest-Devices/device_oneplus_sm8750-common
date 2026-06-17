@@ -118,6 +118,39 @@ blob_fixups: blob_fixups_user_type = {
         .add_needed('libbase.so'),
     'vendor/lib64/libwfdmmsrc_proprietary.so': blob_fixup()
         .replace_needed('android.media.audio.common.types-V2-ndk.so', 'android.media.audio.common.types-V3-ndk.so'),
+    'vendor/etc/media_codecs_sun.xml': blob_fixup()
+        #FIX HDR ENCODER
+        .regex_replace(
+            r'<!--\s*<MediaCodec name="c2\.qti\.dv\.encoder" type="video/dolby-vision">',
+            r'<MediaCodec name="c2.qti.dv.encoder" type="video/dolby-vision">'
+        )
+        .regex_replace(
+            r'(<Limit name="performance-point-7680x4320" value="30" />\s*)</MediaCodec>\s*-->',
+            r'\1    <Feature name="profile-and-level" value="256-8" />\n'
+            r'            <Feature name="profile-and-level" value="256-256" />\n'
+            r'            <Feature name="profile-and-level" value="256-1024" />\n'
+            r'        </MediaCodec>'
+        )
+        #FIX HDR DECODER
+        .regex_replace(
+            r'<!--\s*<MediaCodec name="c2\.qti\.dv\.decoder" type="video/dolby-vision" >',
+            r'<MediaCodec name="c2.qti.dv.decoder" type="video/dolby-vision" >'
+        )
+        .regex_replace(
+            r'(<Limit name="performance-point-8192x4320" value="48" />\s*)</MediaCodec>',
+            r'\1    <Feature name="profile-and-level" value="256-8" />\n'
+            r'            <Feature name="profile-and-level" value="256-256" />\n'
+            r'            <Feature name="profile-and-level" value="256-1024" />\n'
+            r'        </MediaCodec>'
+        )
+        #FIX HDR DECODER SECURE
+        .regex_replace(
+            r'(<Limit name="performance-point-4096x2304" value="120" />\s*)</MediaCodec>\s*-->',
+            r'\1    <Feature name="profile-and-level" value="256-8" />\n'
+            r'            <Feature name="profile-and-level" value="256-256" />\n'
+            r'            <Feature name="profile-and-level" value="256-1024" />\n'
+            r'        </MediaCodec>'
+        ),
 }  # fmt: skip
 
 module = ExtractUtilsModule(
