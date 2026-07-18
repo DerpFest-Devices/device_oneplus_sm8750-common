@@ -380,7 +380,6 @@ oplus_sensor_feedback.ko
 oplus_sensor_interact.ko
 oplus_sensor_ir_core.ko
 oplus_sensor_kookong_ir_spi.ko
-oplus_sync_fence.ko
 thermal_pa_adc.ko
 smcinvoke_dlkm.ko
 msm_drm.ko
