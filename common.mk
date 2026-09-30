@@ -536,3 +536,6 @@ PRODUCT_COPY_FILES += \
 
 # Inherit from the proprietary files makefile.
 $(call inherit-product, vendor/oneplus/sm8750-common/sm8750-common-vendor.mk)
+
+# BCR Support
+$(call inherit-product, vendor/bcr/bcr.mk)
